@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville&display=swap" rel="stylesheet">
+</head>
+
+<body style="font-family: 'Libre Baskerville', serif;">
+    <h1 class="text-center p-3 text-4xl font-bold ">Letters from a stoic </h1>
+    <div class="flex">
+        {{range .}}
+        <div class="p-6 mx-20 my-10 border shadow-lg rounded-lg max-w-sm">
+            <h2 class="font-bold text-2xl pb-2 "> <a href="/blog/{{.Id}}"> {{.Title}}</a></h2>
+            <h3 class="pb-2 max-w-sm pb-2">{{.ShortenText}}</h3>
+            <div class="text-blue-600 text-sm">
+                <h3>{{.Date}}</h3>
+            </div>
+        </div>
+        {{end}}
+    </div>
+</body>
+
+</html>

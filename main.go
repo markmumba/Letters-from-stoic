@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -93,27 +94,26 @@ func ApiCommentPost(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	email := r.FormValue("email")
 	comment := r.FormValue("comment")
-	fmt.Println(blog_id, name, email, comment)
+	date := time.Now()
 
-	sqlStatement := "INSERT INTO comment (blog_id,email,text,name) VALUES ($1,$2,$3,$4)"
-	response, err := database.Exec(sqlStatement, blog_id, email, comment, name)
-	fmt.Println(response)
-	if err != nil {
+	LastInsertId := 0
+	sqlStatement := "INSERT INTO comment (blog_id,email,text,name,date) VALUES ($1,$2,$3,$4,$5) RETURNING id"
+	row := database.QueryRow(sqlStatement, blog_id, email, comment, name, date).Scan(&LastInsertId)
+
+	if row != nil {
 		log.Println(err.Error())
-
 	}
-
-	id, err := response.LastInsertId()
-	if err != nil {
+	id := LastInsertId
+	if id == 0 {
 		commentAdded = false
 	} else {
 		commentAdded = true
 	}
+
 	commentAddedBool := strconv.FormatBool(commentAdded)
 	resp := make(map[string]string)
-	resp["id"] = string(id)
+	resp["id"] = strconv.Itoa(id)
 	resp["added"] = commentAddedBool
-	fmt.Println(resp)
 	JsonPrintResponse, _ := json.Marshal(resp)
 	w.Header().Set("Content-type", "application/json")
 	fmt.Fprintln(w, string(JsonPrintResponse))

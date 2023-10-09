@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/sha1"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"text/template"
 	"time"
@@ -83,6 +86,28 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func ApiBlog(w http.ResponseWriter, r *http.Request) {
+
+	allBlogs := []Blog{}
+	sqlStatement := `SELECT * FROM blog ORDER BY date DESC`
+	rows, err := database.Query(sqlStatement)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var blog Blog
+		rows.Scan(&blog.Id, &blog.Image, &blog.Title, &blog.ShortText, &blog.LongText, &blog.Date)
+		allBlogs = append(allBlogs, blog)
+	}
+
+	JsonResponse, _ := json.Marshal(allBlogs)
+	fmt.Fprintln(w, string(JsonResponse))
+
+}
+
 func ApiCommentPost(w http.ResponseWriter, r *http.Request) {
 	var commentAdded bool
 	err := r.ParseForm()
@@ -117,6 +142,43 @@ func ApiCommentPost(w http.ResponseWriter, r *http.Request) {
 	JsonPrintResponse, _ := json.Marshal(resp)
 	w.Header().Set("Content-type", "application/json")
 	fmt.Fprintln(w, string(JsonPrintResponse))
+
+}
+
+func RegisterPost(w http.ResponseWriter, r *http.Request) {
+
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	user_name := r.FormValue("user_name")
+	user_email := r.FormValue("user_email")
+	password := r.FormValue("password")
+	//password2 := r.FormValue("password2")
+	blogId := r.FormValue("referrer")
+	gure := regexp.MustCompile("[^A-Za-z0-9]")
+	guid := gure.ReplaceAllString(user_name, "")
+	finalPass := weakPasswordHash(password)
+
+	sqlStatement := `INSERT INTO users (user_name,user_guid,user_email,user_password) VALUES ($1,$2,$3,$4)`
+
+	res, err := database.Exec(sqlStatement, user_name, guid, user_email, finalPass)
+	fmt.Println(res)
+	if err != nil {
+		fmt.Fprintln(w, err.Error())
+
+	} else {
+		http.Redirect(w, r, "/blog/"+blogId, 301)
+
+	}
+
+}
+
+func weakPasswordHash(password string) []byte {
+	hash := sha1.New()
+	io.WriteString(hash, password)
+	return hash.Sum(nil)
 }
 
 func main() {
@@ -133,7 +195,11 @@ func main() {
 	router.HandleFunc("/home", homePage)
 	router.HandleFunc("/", redirectHome)
 
+	router.HandleFunc("/api/blogs", ApiBlog).Methods("GET")
 	router.HandleFunc("/api/comments", ApiCommentPost).Methods("POST")
+
+	router.HandleFunc("/register", RegisterPost).Methods("POST")
+
 	http.Handle("/", router)
 
 	http.ListenAndServe(PORT, nil)

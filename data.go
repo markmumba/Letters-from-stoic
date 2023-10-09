@@ -1,22 +1,35 @@
 package main
 
 type Blog struct {
-	Id        string `json:id`
-	Image     string `json:image`
-	Title     string `json:title`
-	ShortText string `json:shorttext`
-	LongText  string `json:longtext`
-	Date      string `json:date`
+	Id        string
+	Image     string
+	Title     string
+	ShortText string
+	LongText  string
+	Date      string
 	Comments  []Comment
+	Session   Session
 }
 
 type Comment struct {
-	Id     string `json:id`
-	BlogId string `json:blog_id`
-	Name   string `json:name`
-	Email  string `json:email`
-	Text   string `json:text`
-	Date   string `json:date`
+	Id     string
+	BlogId string
+	Name   string
+	Email  string
+	Text   string
+	Date   string
+}
+
+type User struct {
+	Id   int
+	Name string
+}
+
+type Session struct {
+	Id              int
+	Authenticated   bool
+	Unauthenticated bool
+	User            User
 }
 
 func (b Blog) ShortenText() string {
